@@ -22,10 +22,14 @@ fn main() -> ! {
     let mut flash = dp.FLASH.constrain();
     let mut rcc = dp.RCC.constrain();
 
-    let clocks = rcc.cfgr.use_hse(8.MHz()).freeze(&mut flash.acr);
+    // Freezes the clock configuration, making it effective.
+    let clocks = rcc.cfgr.freeze(&mut flash.acr);
+    // Splits the GPIO block into independent pins and registers.
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
+    // Configures the pin to operate as an analog pin, with disabled schmitt trigger.
     let mut light_pin = gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
 
+    // Initialize a new ADC peripheral.
     let mut adc = Adc::new(
         dp.ADC1,
         Config::default(),
@@ -35,7 +39,6 @@ fn main() -> ! {
 
     loop {
         let data: u16 = adc.read(&mut light_pin).unwrap();
-        // Start conversion and wait until ECO is set.
         defmt::info!("{}", data);
 
         // Wait 100ms for next conversion
